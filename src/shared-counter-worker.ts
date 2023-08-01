@@ -4,11 +4,11 @@ const _ = self as unknown as SharedWorkerGlobalScope;
 const ports: MessagePort[] = [];
 
 _.onconnect = function (e) {
-  console.log("new client");
-
   const [port] = e.ports;
   ports.push(port);
   port.start();
+
+  console.log("new client, count:", ports.length);
 
   port.onmessage = function (message) {
     if (message.data === "increment") {
@@ -21,9 +21,13 @@ _.onconnect = function (e) {
   };
 };
 
-const increment = () => {
-  mySlowFunction(5);
-  count++;
+const increment = async () => {
+  await new Promise<void>((resolve) => {
+    mySlowFunction(6);
+    count++;
+    resolve();
+  });
+
   console.log(`send snapshot to ${ports.length} clients`);
   ports.forEach(sendSnapshot);
 };
@@ -37,6 +41,7 @@ function mySlowFunction(baseNumber: number) {
   console.time("mySlowFunction");
   let result = 0;
   for (let i = Math.pow(baseNumber, 7); i >= 0; i--) {
+    console.count("iteration...");
     result += Math.atan(i) * Math.tan(i);
   }
   console.timeEnd("mySlowFunction");
