@@ -1,76 +1,49 @@
 import { PropsWithChildren, Suspense, useState } from "react";
 import "./App.css";
-import {
-  clearCache,
-  invalidate,
-  optimisticIncrement,
-  pessimisticIncrement,
-  useSharedCounter,
-} from "./shared-counter-store";
 import { Blob } from "./Blob";
+import { pessimisticIncrement, useSharedCounter } from "./shared-counter-state";
 
 function App() {
   return (
     <>
       <Blob />
-      <Controls />
+      <Reveal>
+        <Card>
+          <Suspense fallback={<button disabled>Incrementing...</button>}>
+            <Counter />
+          </Suspense>
+        </Card>
+      </Reveal>
     </>
   );
 }
 
-const Controls = () => {
+const Reveal = ({ children }: PropsWithChildren) => {
   const [isOpen, setOpen] = useState(false);
-  return isOpen ? (
-    <>
-      <Card>
-        <Counter optimistic />
-      </Card>
-      <Card>
-        <Counter />
-      </Card>
-      <Card>
-        <button onClick={() => invalidate()}>Invalidate</button>
-      </Card>
-      <Card>
-        <button
-          onClick={() => {
-            clearCache();
-            setOpen(false);
-          }}
-        >
-          Close (clear cache)
-        </button>
-      </Card>
-      <Card>
-        <button onClick={() => setOpen(false)}>Close (keep cache)</button>
-      </Card>
-    </>
-  ) : (
+
+  const header = (
     <Card>
-      <button onClick={() => setOpen(true)}>Open</button>
+      <button onClick={() => setOpen((current) => !current)}>
+        {isOpen ? "Close" : "Open"}
+      </button>
     </Card>
+  );
+
+  return (
+    <>
+      {header}
+      {isOpen ? children : null}
+    </>
   );
 };
 
 const Card = ({ children }: PropsWithChildren) => (
-  <div className="card">
-    <Suspense fallback={<button disabled>Loading ...</button>}>
-      {children}
-    </Suspense>
-  </div>
+  <div className="card">{children}</div>
 );
 
-const Counter = (props: { optimistic?: boolean }) => {
+const Counter = () => {
   const count = useSharedCounter();
-  return (
-    <button
-      onClick={() =>
-        props.optimistic ? optimisticIncrement() : pessimisticIncrement()
-      }
-    >
-      {props.optimistic ? "Optimistic" : "Pessimistic"} Count: {count}
-    </button>
-  );
+  return <button onClick={() => pessimisticIncrement()}>Count: {count}</button>;
 };
 
 export default App;

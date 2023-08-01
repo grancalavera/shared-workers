@@ -5,8 +5,20 @@ let count: number | undefined;
 let subscribers: (() => void)[] = [];
 const worker = new SharedCounterWorker();
 
-worker.port.onmessage = (e) => {
+worker.port.onmessage = (e: MessageEvent<number | undefined>) => {
+  console.log("snapshot received", e.data);
   count = e.data;
+
+  if (count === undefined && suspender.promise === undefined) {
+    restoreSuspender();
+    notifySubscribers();
+    return;
+  }
+
+  if (count === undefined) {
+    return;
+  }
+
   stopSuspending();
   notifySubscribers();
 };
@@ -62,20 +74,4 @@ export const pessimisticIncrement = () => {
   count = undefined;
   notifySubscribers();
   increment();
-};
-
-export const optimisticIncrement = () => {
-  count = (count ?? 0) + 1;
-  notifySubscribers();
-  increment();
-};
-
-export const invalidate = () => {
-  count = undefined;
-  notifySubscribers();
-  snapshot();
-};
-
-export const clearCache = () => {
-  count = undefined;
 };

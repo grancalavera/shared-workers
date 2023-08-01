@@ -1,7 +1,38 @@
-let count = 0;
+import { BehaviorSubject, Subject, concatMap, map, scan, share } from "rxjs";
+
+const countDisplay$ = new BehaviorSubject<number | undefined>(0);
+const increment$ = new Subject<void>();
+const increment = () => increment$.next();
+
+const fork = <T>(value: T) =>
+  new Promise<T>((resolve) => {
+    setTimeout(() => {
+      resolve(value);
+    }, 0);
+  });
+
+const count$ = increment$.pipe(
+  concatMap(fork),
+  map(() => simulateSlowPerformance(15)),
+  scan((x) => x + 1, 0),
+  share()
+);
+
+count$.subscribe((count) => {
+  countDisplay$.next(count);
+});
+
+increment$.subscribe(() => {
+  countDisplay$.next(undefined);
+});
 
 const _ = self as unknown as SharedWorkerGlobalScope;
 const ports: MessagePort[] = [];
+
+countDisplay$.subscribe((count) => {
+  console.log("broadcast", count);
+  ports.forEach((port) => port.postMessage(count));
+});
 
 _.onconnect = function (e) {
   const [port] = e.ports;
@@ -16,32 +47,20 @@ _.onconnect = function (e) {
     }
 
     if (message.data === "snapshot") {
-      sendSnapshot(port);
+      sendSnapshot(countDisplay$.getValue())(port);
     }
   };
 };
 
-const increment = async () => {
-  await new Promise<void>((resolve) => {
-    mySlowFunction(6);
-    count++;
-    resolve();
-  });
-
-  console.log(`send snapshot to ${ports.length} clients`);
-  ports.forEach(sendSnapshot);
+const sendSnapshot = (snapshot: number | undefined) => (port: MessagePort) => {
+  port.postMessage(snapshot);
+  console.log("snapshot sent", snapshot);
 };
 
-const sendSnapshot = (port: MessagePort) => {
-  port.postMessage(count);
-  console.log("snapshot sent");
-};
-
-function mySlowFunction(baseNumber: number) {
+function simulateSlowPerformance(baseNumber: number) {
   console.time("mySlowFunction");
   let result = 0;
   for (let i = Math.pow(baseNumber, 7); i >= 0; i--) {
-    console.count("iteration...");
     result += Math.atan(i) * Math.tan(i);
   }
   console.timeEnd("mySlowFunction");
