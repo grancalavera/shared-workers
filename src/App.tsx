@@ -7,8 +7,18 @@ import {
   pessimisticIncrement,
   useSharedCounter,
 } from "./shared-counter-store";
+import { Blob } from "./Blob";
 
 function App() {
+  return (
+    <>
+      <Blob />
+      <Controls />
+    </>
+  );
+}
+
+const Controls = () => {
   const [isOpen, setOpen] = useState(false);
   return isOpen ? (
     <>
@@ -40,7 +50,7 @@ function App() {
       <button onClick={() => setOpen(true)}>Open</button>
     </Card>
   );
-}
+};
 
 const Card = ({ children }: PropsWithChildren) => (
   <div className="card">

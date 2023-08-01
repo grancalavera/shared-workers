@@ -22,27 +22,23 @@ _.onconnect = function (e) {
 };
 
 const increment = () => {
+  mySlowFunction(5);
   count++;
   console.log(`send snapshot to ${ports.length} clients`);
   ports.forEach(sendSnapshot);
 };
 
-const pendingSnapshots = new Map<MessagePort, number>();
-
 const sendSnapshot = (port: MessagePort) => {
-  const delay = 1500;
-  console.log(`snapshot requested, delay ${delay / 1000} seconds`);
-
-  if (pendingSnapshots.has(port)) {
-    console.log("abort snapshot");
-    clearInterval(pendingSnapshots.get(port));
-  }
-
-  const tid = setTimeout(() => {
-    port.postMessage(count);
-    console.log("snapshot sent");
-    pendingSnapshots.delete(port);
-  }, delay);
-
-  pendingSnapshots.set(port, tid);
+  port.postMessage(count);
+  console.log("snapshot sent");
 };
+
+function mySlowFunction(baseNumber: number) {
+  console.time("mySlowFunction");
+  let result = 0;
+  for (let i = Math.pow(baseNumber, 7); i >= 0; i--) {
+    result += Math.atan(i) * Math.tan(i);
+  }
+  console.timeEnd("mySlowFunction");
+  return result;
+}
