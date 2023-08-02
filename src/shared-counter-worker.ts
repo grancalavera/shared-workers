@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subject, concatMap, map, scan, share } from "rxjs";
 
-const countDisplay$ = new BehaviorSubject<number | undefined>(0);
+const countChannel$ = new BehaviorSubject<number | undefined>(0);
 const increment$ = new Subject<void>();
 const increment = () => increment$.next();
 
@@ -13,26 +13,27 @@ const fork = <T>(value: T) =>
 
 const count$ = increment$.pipe(
   concatMap(fork),
-  map(() => simulateSlowPerformance(15)),
+  map(() => simulateSlowPerformance(12)),
   scan((x) => x + 1, 0),
   share()
 );
 
 count$.subscribe((count) => {
-  countDisplay$.next(count);
+  countChannel$.next(count);
 });
 
 increment$.subscribe(() => {
-  countDisplay$.next(undefined);
+  countChannel$.next(undefined);
+});
+
+// public api
+countChannel$.subscribe((count) => {
+  console.log("broadcast", count);
+  ports.forEach((port) => port.postMessage(count));
 });
 
 const _ = self as unknown as SharedWorkerGlobalScope;
 const ports: MessagePort[] = [];
-
-countDisplay$.subscribe((count) => {
-  console.log("broadcast", count);
-  ports.forEach((port) => port.postMessage(count));
-});
 
 _.onconnect = function (e) {
   const [port] = e.ports;
@@ -47,7 +48,7 @@ _.onconnect = function (e) {
     }
 
     if (message.data === "snapshot") {
-      sendSnapshot(countDisplay$.getValue())(port);
+      sendSnapshot(countChannel$.getValue())(port);
     }
   };
 };
