@@ -1,35 +1,23 @@
-import { BehaviorSubject, Subject, concatMap, map, scan, share } from "rxjs";
+import { BehaviorSubject, Subject, map, scan, share, tap } from "rxjs";
 
-const countChannel$ = new BehaviorSubject<number | undefined>(0);
+const lastResult$ = new BehaviorSubject<number | undefined>(0);
 const increment$ = new Subject<void>();
 const increment = () => increment$.next();
 
-const fork = <T>(value: T) =>
-  new Promise<T>((resolve) => {
-    setTimeout(() => {
-      resolve(value);
-    }, 0);
-  });
-
 const count$ = increment$.pipe(
-  concatMap(fork),
-  map(() => simulateSlowPerformance(12)),
+  map(() => simulateSlowPerformance(11)),
   scan((x) => x + 1, 0),
   share()
 );
 
 count$.subscribe((count) => {
-  countChannel$.next(count);
-});
-
-increment$.subscribe(() => {
-  countChannel$.next(undefined);
+  lastResult$.next(count);
 });
 
 // public api
-countChannel$.subscribe((count) => {
-  console.log("broadcast", count);
-  ports.forEach((port) => port.postMessage(count));
+lastResult$.subscribe((lastResult) => {
+  console.log("broadcast", lastResult);
+  ports.forEach((port) => port.postMessage(lastResult));
 });
 
 const _ = self as unknown as SharedWorkerGlobalScope;
@@ -40,20 +28,21 @@ _.onconnect = function (e) {
   ports.push(port);
   port.start();
 
-  console.log("new client, count:", ports.length);
+  console.log("new client, count:", ports.length, e);
 
   port.onmessage = function (message) {
     if (message.data === "increment") {
+      sendSnapshot(undefined, port);
       increment();
     }
 
     if (message.data === "snapshot") {
-      sendSnapshot(countChannel$.getValue())(port);
+      sendSnapshot(lastResult$.getValue(), port);
     }
   };
 };
 
-const sendSnapshot = (snapshot: number | undefined) => (port: MessagePort) => {
+const sendSnapshot = (snapshot: number | undefined, port: MessagePort) => {
   port.postMessage(snapshot);
   console.log("snapshot sent", snapshot);
 };
