@@ -1,36 +1,18 @@
 import { useSyncExternalStore } from "react";
 import SharedCounterWorker from "./shared-counter-worker?sharedworker";
+import { createSuspender } from "./suspender";
+
 const worker = new SharedCounterWorker();
+const suspender = createSuspender();
 
 worker.port.onmessage = (e: MessageEvent<number | undefined>) => {
   console.log("snapshot received", e.data);
   count = e.data;
 
   if (count !== undefined) {
-    stopSuspending();
+    suspender.resume();
   }
-
-  notifySubscribers();
-};
-
-const snapshot = () => worker.port.postMessage("snapshot");
-const notifySubscribers = () => subscribers.forEach((notify) => notify());
-
-type Suspender = {
-  promise?: Promise<void>;
-  resolve?: () => void;
-};
-
-const suspender: Suspender = {};
-
-const restoreSuspender = () => {
-  suspender.promise = new Promise((resolve) => (suspender.resolve = resolve));
-};
-
-const stopSuspending = () => {
-  suspender.resolve?.();
-  suspender.promise = undefined;
-  suspender.resolve = undefined;
+  subscribers.forEach((notify) => notify());
 };
 
 let count: number | undefined;
@@ -44,15 +26,9 @@ const store = {
     };
   },
   getSnapshot(): number {
-    if (count === undefined && suspender.promise === undefined) {
-      snapshot();
-      restoreSuspender();
-      throw suspender.promise;
-    }
-
     if (count === undefined) {
-      snapshot();
-      throw suspender.promise;
+      worker.port.postMessage("snapshot");
+      throw suspender.suspend();
     }
 
     return count;
@@ -62,6 +38,6 @@ const store = {
 export const useSharedCounter = () =>
   useSyncExternalStore(store.subscribe, store.getSnapshot);
 
-export const increment = () => {
+export const incrementSharedCounter = () => {
   worker.port.postMessage("increment");
 };

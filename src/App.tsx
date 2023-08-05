@@ -1,7 +1,10 @@
 import { PropsWithChildren, Suspense, useState } from "react";
 import "./App.css";
 import { Blob } from "./Blob";
-import { increment, useSharedCounter } from "./shared-counter-state";
+import {
+  incrementSharedCounter,
+  useSharedCounter,
+} from "./shared-counter-state";
 
 function App() {
   return (
@@ -43,7 +46,9 @@ const Card = ({ children }: PropsWithChildren) => (
 
 const Counter = () => {
   const count = useSharedCounter();
-  return <button onClick={() => increment()}>Count: {count}</button>;
+  return (
+    <button onClick={() => incrementSharedCounter()}>Count: {count}</button>
+  );
 };
 
 export default App;
