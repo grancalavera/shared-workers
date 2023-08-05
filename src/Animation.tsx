@@ -1,8 +1,7 @@
-import "./Blob.css";
-import styles from "./Blob.module.css";
-import useMeasure from "react-use-measure";
-import { useTrail, animated } from "@react-spring/web";
+import { animated, useTrail } from "@react-spring/web";
 import { useEffect } from "react";
+import useMeasure from "react-use-measure";
+import styles from "./Animation.module.css";
 
 const fast = { tension: 1200, friction: 40 };
 const slow = { mass: 10, tension: 200, friction: 50 };
@@ -23,7 +22,7 @@ function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export const Blob = () => {
+export const Animation = () => {
   const [trail, api] = useTrail(3, (i) => ({
     xy: [0, 0],
     config: i === 0 ? fast : slow,
@@ -41,7 +40,7 @@ export const Blob = () => {
   }, [bottom, right, api, left, top]);
 
   return (
-    <div className={styles.container + " blob"}>
+    <div className={styles.container}>
       <svg style={{ position: "absolute", width: 0, height: 0 }}>
         <filter id="goo">
           <feGaussianBlur in="SourceGraphic" result="blur" stdDeviation="30" />

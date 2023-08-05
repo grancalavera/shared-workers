@@ -1,13 +1,15 @@
-import { BehaviorSubject, Subject, map, scan, share, tap } from "rxjs";
+import { BehaviorSubject, Subject, delay, map, scan, share, tap } from "rxjs";
 
 const cache$ = new BehaviorSubject<number | undefined>(0);
 const increment$ = new Subject<void>();
 const counter$ = increment$.pipe(
   tap(() => cache$.next(undefined)),
+  delay(10),
   map(() => simulateSlowPerformance(11)),
   scan((x) => x + 1, 0),
   share()
 );
+
 counter$.subscribe((count) => {
   cache$.next(count);
 });
