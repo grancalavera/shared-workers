@@ -2,36 +2,36 @@ import { useSyncExternalStore } from "react";
 import SharedCounterWorker from "./shared-counter-worker?sharedworker";
 import { createSuspender } from "./suspender";
 
+type Subscriber = () => void;
+
+let snapshot: number | undefined;
+const subscribers = new Set<Subscriber>();
 const worker = new SharedCounterWorker();
 const suspender = createSuspender();
 
 worker.port.onmessage = (e: MessageEvent<number | undefined>) => {
   console.log("snapshot received", e.data);
-  count = e.data;
+  snapshot = e.data;
 
-  if (count !== undefined) {
+  if (snapshot !== undefined) {
     suspender.resume();
   }
+
   subscribers.forEach((notify) => notify());
 };
 
-let count: number | undefined;
-const subscribers = new Set<() => void>();
-
 const store = {
-  subscribe(subscriber: () => void) {
+  subscribe(subscriber: Subscriber) {
     subscribers.add(subscriber);
-    return () => {
-      subscribers.delete(subscriber);
-    };
+    return () => subscribers.delete(subscriber);
   },
   getSnapshot(): number {
-    if (count === undefined) {
+    if (snapshot === undefined) {
       worker.port.postMessage("snapshot");
       throw suspender.suspend();
     }
 
-    return count;
+    return snapshot;
   },
 };
 

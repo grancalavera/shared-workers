@@ -15,11 +15,11 @@ export const createSuspender = (): Suspender => {
   };
 
   const resume = () => {
-    if (promise === undefined) {
-      resolve?.();
-      promise = undefined;
-      resolve = undefined;
-    }
+    if (promise === undefined) return;
+
+    resolve?.();
+    promise = undefined;
+    resolve = undefined;
   };
 
   return { suspend, resume };
