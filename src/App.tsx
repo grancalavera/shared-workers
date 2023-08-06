@@ -8,11 +8,15 @@ import {
   incrementSharedCounter,
   useSharedCounter,
 } from "./shared-counter-state";
+import { slowFactor } from "./slow-factor";
 
 function App() {
   return (
     <>
       <Animation />
+      <Card>
+        <pre>slow factor: {slowFactor}</pre>
+      </Card>
       <Card>
         <h2>Shared Worker Counter</h2>
         <Fallback>
