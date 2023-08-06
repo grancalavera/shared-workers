@@ -1,6 +1,5 @@
 import { PropsWithChildren, Suspense } from "react";
 import { Animation } from "./Animation";
-import "./App.css";
 import {
   incrementInefficientCounter,
   useInefficientCounter,

@@ -2,8 +2,8 @@ import { useSyncExternalStore } from "react";
 import { count$, getSnapshot, increment } from "./inefficient-counter";
 import { createSuspender } from "./suspender";
 
-type Subscriber = () => void;
-const subscribers = new Set<Subscriber>();
+type StoreSubscriber = () => void;
+const subscribers = new Set<StoreSubscriber>();
 const suspender = createSuspender();
 
 count$.subscribe((count) => {
@@ -15,7 +15,7 @@ count$.subscribe((count) => {
 });
 
 const store = {
-  subscribe(subscriber: Subscriber) {
+  subscribe(subscriber: StoreSubscriber) {
     subscribers.add(subscriber);
     return () => subscribers.delete(subscriber);
   },

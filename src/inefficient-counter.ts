@@ -1,11 +1,14 @@
 import { BehaviorSubject, Subject, delay, map, scan, share, tap } from "rxjs";
 
+const slowFactor = parseInt(import.meta.env.VITE_SLOW_FACTOR ?? "10");
+console.log({ slowFactor });
+
 const cache$ = new BehaviorSubject<number | undefined>(0);
 const increment$ = new Subject<void>();
 const counter$ = increment$.pipe(
   tap(() => cache$.next(undefined)),
   delay(10),
-  map(() => simulateSlowPerformance(11)),
+  map(() => simulateSlowPerformance(slowFactor)),
   scan((x) => x + 1, 0),
   share()
 );

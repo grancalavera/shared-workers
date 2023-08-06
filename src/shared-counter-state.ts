@@ -2,10 +2,9 @@ import { useSyncExternalStore } from "react";
 import SharedCounterWorker from "./shared-counter-worker?sharedworker";
 import { createSuspender } from "./suspender";
 
-type Subscriber = () => void;
-
+type StoreSubscriber = () => void;
 let snapshot: number | undefined;
-const subscribers = new Set<Subscriber>();
+const subscribers = new Set<StoreSubscriber>();
 const worker = new SharedCounterWorker();
 const suspender = createSuspender();
 
@@ -21,7 +20,7 @@ worker.port.onmessage = (e: MessageEvent<number | undefined>) => {
 };
 
 const store = {
-  subscribe(subscriber: Subscriber) {
+  subscribe(subscriber: StoreSubscriber) {
     subscribers.add(subscriber);
     return () => subscribers.delete(subscriber);
   },
